@@ -1,8 +1,8 @@
 import logging
 import sys
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-                           QPushButton, QLabel, QTabWidget, QMessageBox,
-                           QFileDialog)
+                          QPushButton, QLabel, QTabWidget, QMessageBox,
+                          QFileDialog)
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor
 
@@ -20,7 +20,6 @@ class MainWindow(QMainWindow):
             self.db = Database()
             self.project = None
             
-            # Setup iniziale del progetto
             self.setup_project()
             
             if self.project:
@@ -58,7 +57,7 @@ class MainWindow(QMainWindow):
                     except Exception as e:
                         ErrorHandler.show_error(self, "Errore", 
                             "Errore durante il caricamento del progetto", e)
-                        self.setup_project()  # Riprova
+                        self.setup_project()
             else:
                 sys.exit()
         except Exception as e:
@@ -111,9 +110,9 @@ class MainWindow(QMainWindow):
     def add_tableau_tab(self, tableau: TableauElectrique):
         try:
             tab = QWidget()
-            layout = QHBoxLayout(tab)
+            main_layout = QHBoxLayout(tab)
             
-            # Tab per materiali
+            # Tab per materiali (a sinistra)
             materials_tabs = QTabWidget()
             materials_widgets = []
             
@@ -124,21 +123,31 @@ class MainWindow(QMainWindow):
                     manufacturer=manufacturer,
                     database=self.db
                 )
-                materials_tab.dataChanged.connect(self.update_totals)
+                materials_tab.dataChanged.connect(lambda: self.update_totals())
                 materials_widgets.append(materials_tab)
                 materials_tabs.addTab(materials_tab, manufacturer)
             
-            layout.addWidget(materials_tabs, stretch=2)
+            main_layout.addWidget(materials_tabs, stretch=2)
+            
+            # Container per labor e summary (a destra)
+            right_container = QWidget()
+            right_layout = QVBoxLayout(right_container)
+            right_layout.setSpacing(10)
             
             # Widget manodopera
-            labor_widget = LaborWidget(parent=tab)
-            labor_widget.dataChanged.connect(self.update_totals)
-            layout.addWidget(labor_widget, stretch=1)
+            labor_widget = LaborWidget(parent=right_container)
+            labor_widget.dataChanged.connect(lambda: self.update_totals())
+            right_layout.addWidget(labor_widget)
             
             # Widget riepilogo
-            summary_widget = SummaryWidget(parent=tab)
-            summary_widget.marginChanged.connect(self.update_totals)
-            layout.addWidget(summary_widget, stretch=1)
+            summary_widget = SummaryWidget(parent=right_container)
+            summary_widget.marginChanged.connect(lambda: self.update_totals())
+            right_layout.addWidget(summary_widget)
+            
+            # Aggiungi spacer per spingere tutto verso l'alto
+            right_layout.addStretch()
+            
+            main_layout.addWidget(right_container, stretch=1)
             
             # Salva riferimenti ai widget nel tab
             tab.materials_tabs = materials_tabs
@@ -148,6 +157,7 @@ class MainWindow(QMainWindow):
             
             # Aggiungi tab
             self.tableaux_tabs.addTab(tab, tableau.name)
+            
         except Exception as e:
             logging.error(f"Errore nell'aggiunta del tab del quadro: {str(e)}")
             QMessageBox.critical(self, "Errore", f"Errore nell'aggiunta del quadro: {str(e)}")
@@ -178,16 +188,16 @@ class MainWindow(QMainWindow):
                 manufacturer = materials_tab.manufacturer
 
                 for row in range(table.rowCount()):
-                    qty_item = table.item(row, 0)
-                    price_total_item = table.item(row, 5)
-                    time_total_item = table.item(row, 6)
-                    modules_item = table.item(row, 7)
-                    bornes_item = table.item(row, 8)
-                    bornes_space_item = table.item(row, 10)
+                    try:
+                        qty_item = table.item(row, 0)
+                        price_total_item = table.item(row, 5)
+                        time_total_item = table.item(row, 6)
+                        modules_item = table.item(row, 7)
+                        bornes_item = table.item(row, 8)
+                        bornes_space_item = table.item(row, 10)
 
-                    if all([qty_item, price_total_item]) and qty_item.text():
-                        try:
-                            qty = float(qty_item.text())
+                        if all([qty_item, price_total_item]) and qty_item.text():
+                            qty = float(qty_item.text().replace(",", "."))
                             price_total = float(price_total_item.text().replace("'", ""))
                             material_total += price_total
 
@@ -215,8 +225,10 @@ class MainWindow(QMainWindow):
                             if bornes_space_item and bornes_space_item.text():
                                 modules_data['total_bornes_space'] += qty * float(bornes_space_item.text())
 
-                        except ValueError:
-                            continue
+                    except ValueError:
+                        continue
+                    except Exception as e:
+                        logging.error(f"Errore nel calcolo della riga {row}: {str(e)}")
 
             # Calcolo rangées
             if modules_data['total_modules'] > 0:
@@ -229,6 +241,7 @@ class MainWindow(QMainWindow):
             # Aggiorna il riepilogo
             current_tab.summary_widget.update_costs(material_total, time_total, labor_total)
             current_tab.summary_widget.update_info(modules_data)
+            
         except Exception as e:
             logging.error(f"Errore nell'aggiornamento dei totali: {str(e)}")
 
@@ -317,7 +330,7 @@ class MainWindow(QMainWindow):
                         break
         except Exception as e:
             logging.error(f"Errore nell'aggiornamento del colore del tab: {str(e)}")
-                        
+
     def go_back(self):
         try:
             reply = QMessageBox.question(
@@ -343,11 +356,24 @@ class MainWindow(QMainWindow):
             )
             if filename:
                 try:
-                    # Implementa l'esportazione
+                    # Qui puoi implementare la logica di esportazione
+                    self.export_to_excel(filename)
                     QMessageBox.information(self, "Export",
                                         f"Preventivo esportato in {filename}")
                 except Exception as e:
                     QMessageBox.critical(self, "Errore",
                                     f"Errore durante l'esportazione: {str(e)}")
+                    logging.error(f"Errore durante l'esportazione: {str(e)}")
         except Exception as e:
-            logging.error(f"Errore durante l'esportazione: {str(e)}")
+            logging.error(f"Errore nella selezione del file di esportazione: {str(e)}")
+            QMessageBox.critical(self, "Errore",
+                            "Errore nella selezione del file di esportazione")
+
+    def export_to_excel(self, filename):
+        try:
+            # Implementa qui la logica di esportazione in Excel
+            # Per ora è un placeholder
+            pass
+        except Exception as e:
+            logging.error(f"Errore nell'esportazione in Excel: {str(e)}")
+            raise

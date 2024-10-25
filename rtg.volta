@@ -1,0 +1,14 @@
+{
+    "name": "rtg",
+    "client_name": "rtb",
+    "volta_number": "rtb",
+    "creation_date": "2024-10-25",
+    "tableaux": {
+        "rb": {
+            "name": "rb",
+            "materials_data": {},
+            "labor_data": [],
+            "summary_data": {}
+        }
+    }
+}

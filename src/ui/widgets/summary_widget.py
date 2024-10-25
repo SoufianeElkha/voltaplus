@@ -11,6 +11,12 @@ class SummaryWidget(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        # Inizializza il margin_spin prima di chiamare setup_ui
+        self.margin_spin = QDoubleSpinBox()
+        self.margin_spin.setRange(0, 100)
+        self.margin_spin.setValue(APP_CONFIG['default_margin'])
+        self.margin_spin.valueChanged.connect(lambda value: self.marginChanged.emit(value/100))
+        
         self.setup_ui()
     
     def setup_ui(self):
@@ -25,10 +31,6 @@ class SummaryWidget(QWidget):
         # Margine in alto
         margin_layout = QHBoxLayout()
         margin_label = QLabel("Margine Materiale (%):")
-        self.margin_spin = QDoubleSpinBox()
-        self.margin_spin.setRange(0, 100)
-        self.margin_spin.setValue(25)
-        self.margin_spin.valueChanged.connect(self.marginChanged.emit)
         margin_layout.addWidget(margin_label)
         margin_layout.addWidget(self.margin_spin)
         margin_layout.addStretch()
@@ -60,6 +62,7 @@ class SummaryWidget(QWidget):
         info_group.setLayout(info_layout)
         layout.addWidget(info_group)
     
+
     def setup_costs_table(self):
         self.costs_table.setColumnCount(2)
         self.costs_table.setRowCount(4)
