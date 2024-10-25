@@ -1,3 +1,5 @@
+import logging
+import sqlite3
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                            QTableWidgetItem, QCheckBox, QLabel, QHeaderView,
                            QMessageBox, QLineEdit, QCompleter, QStyledItemDelegate,
@@ -11,15 +13,37 @@ from .custom_editors import InlineEditDelegate
 from ...utils.error_handler import ErrorHandler
 
 class MaterialsTab(QWidget):
-    dataChanged = pyqtSignal(str, bool)  # Segnale per il manufacturer e lo stato del contenuto
+    dataChanged = pyqtSignal()
     
-    def __init__(self, manufacturer: str, parent=None):
+    def __init__(self, parent=None, manufacturer=None, database=None):
         super().__init__(parent)
         self.manufacturer = manufacturer
+        self.db = database
         self.has_content = False
-        self.clipboard_data = None
-        self.setup_database()
+        
+        # Inizializza il completer qui
+        self.setup_reference_autocomplete()
         self.setup_ui()
+    
+    def setup_reference_autocomplete(self):
+        try:
+            if hasattr(self.db, 'get_references_by_manufacturer'):
+                references = self.db.get_references_by_manufacturer(self.manufacturer)
+                self.references_data = {ref: desc for ref, desc in references}
+                
+                # Crea il completer
+                self.reference_completer = QCompleter(list(self.references_data.keys()))
+                self.reference_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+                self.reference_completer.setFilterMode(Qt.MatchFlag.MatchContains)
+            else:
+                self.references_data = {}
+                self.reference_completer = QCompleter([])
+                logging.error("Database non ha il metodo get_references_by_manufacturer")
+                
+        except Exception as e:
+            logging.error(f"Errore nell'inizializzazione dell'autocompletamento: {str(e)}")
+            self.references_data = {}
+            self.reference_completer = QCompleter([])
         
     def setup_database(self):
         try:
@@ -29,56 +53,9 @@ class MaterialsTab(QWidget):
             logging.error(f"Errore nella connessione al database: {str(e)}")
             raise
     
-    def setup_reference_autocomplete(self):
-        cursor = self.db.cursor()
-        cursor.execute('''
-        SELECT reference, designation
-        FROM products
-        WHERE manufacturer = ?
-        ''', (self.manufacturer,))
-        
-        references = cursor.fetchall()
-        self.references_data = {ref: desc for ref, desc in references}
-        
-        # Crea il completer
-        self.reference_completer = QCompleter(list(self.references_data.keys()))
-        self.reference_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        self.reference_completer.setFilterMode(Qt.MatchFlag.MatchContains)
+ 
     
-    def setup_ui(self):
-        layout = QVBoxLayout(self)
-        
-        # Controlli colonne
-        columns_layout = QHBoxLayout()
-        columns_label = QLabel("Colonne visibili:")
-        columns_layout.addWidget(columns_label)
-        
-        # Checkbox per ogni colonna aggiuntiva
-        self.column_checkboxes = {}
-        column_names = {
-            'num_modules': 'Numero Module',
-            'num_bornes': 'Bornes',
-            'bornes_mm': '1 Borne mm',
-            'tot_bornes_mm': 'Tot mm Bornes',
-            'prix_2s': 'Prix 2S',
-            'prix_3s': 'Prix 3S'
-        }
-        
-        for col_id, col_name in column_names.items():
-            cb = QCheckBox(col_name)
-            cb.setChecked(False)
-            cb.stateChanged.connect(
-                lambda state, c=col_id: self.toggle_column_visibility(c, state)
-            )
-            columns_layout.addWidget(cb)
-            self.column_checkboxes[col_id] = cb
-        
-        layout.addLayout(columns_layout)
-        
-        # Tabella materiali
-        self.table = QTableWidget()
-        self.setup_table()
-        layout.addWidget(self.table)
+
     
     def setup_table(self):
         self.table.setRowCount(200)
@@ -158,82 +135,6 @@ class MaterialsTab(QWidget):
         except (ValueError, TypeError):
             return value
 
-    def on_cell_changed(self, item):
-        row = item.row()
-        col = item.column()
-        
-        try:
-            if col == 1:  # Reference column
-                reference = item.text().strip()
-                if reference:
-                    # Cerca il prodotto nel database
-                    cursor = self.db.cursor()
-                    cursor.execute('''
-                    SELECT designation, price, time, num_modules, num_bornes,
-                           bornes_mm, tot_bornes_mm, prix_2s, prix_3s
-                    FROM products
-                    WHERE reference = ? AND manufacturer = ?
-                    ''', (reference, self.manufacturer))
-                    
-                    result = cursor.fetchone()
-                    if result:
-                        (designation, price, time, num_modules, num_bornes,
-                         bornes_mm, tot_bornes_mm, prix_2s, prix_3s) = result
-                        
-                        # Blocca i segnali solo per l'aggiornamento dei dati
-                        self.table.blockSignals(True)
-                        
-                        # Aggiorna i campi
-                        self.table.setItem(row, 2, QTableWidgetItem(str(designation)))
-                        self.table.setItem(row, 3, QTableWidgetItem(self.format_number(price)))
-                        self.table.setItem(row, 4, QTableWidgetItem(str(time)))
-                        
-                        # Aggiorna campi nascosti
-                        self.table.setItem(row, 7, QTableWidgetItem(str(num_modules or '')))
-                        self.table.setItem(row, 8, QTableWidgetItem(str(num_bornes or '')))
-                        self.table.setItem(row, 9, QTableWidgetItem(str(bornes_mm or '')))
-                        self.table.setItem(row, 10, QTableWidgetItem(str(tot_bornes_mm or '')))
-                        self.table.setItem(row, 11, QTableWidgetItem(self.format_number(prix_2s) if prix_2s else ''))
-                        self.table.setItem(row, 12, QTableWidgetItem(self.format_number(prix_3s) if prix_3s else ''))
-                        
-                        # Se c'è già una quantità, aggiorna i totali
-                        qty_item = self.table.item(row, 0)
-                        if qty_item and qty_item.text():
-                            try:
-                                qty = float(qty_item.text())
-                                self.table.setItem(row, 5, QTableWidgetItem(self.format_number(price * qty)))
-                                self.table.setItem(row, 6, QTableWidgetItem(str(int(time * qty))))
-                            except ValueError:
-                                pass
-                        
-                        self.table.blockSignals(False)
-            
-            elif col == 0:  # Quantity column
-                qty_text = item.text().strip()
-                price_item = self.table.item(row, 3)
-                time_item = self.table.item(row, 4)
-                
-                if qty_text and price_item and time_item:
-                    try:
-                        qty = float(qty_text)
-                        price = float(price_item.text().replace("'", ""))
-                        time = float(time_item.text())
-                        
-                        self.table.blockSignals(True)
-                        self.table.setItem(row, 5, QTableWidgetItem(self.format_number(price * qty)))
-                        self.table.setItem(row, 6, QTableWidgetItem(str(int(time * qty))))
-                        self.table.blockSignals(False)
-                    except ValueError:
-                        pass
-            
-            # Verifica se c'è contenuto nella tabella
-            has_content = self.check_content()
-            if has_content != self.has_content:
-                self.has_content = has_content
-                self.dataChanged.emit(self.manufacturer, has_content)
-            
-        except Exception as e:
-            logging.error(f"Errore nell'aggiornamento della riga: {str(e)}")
     
     def check_content(self):
         for row in range(self.table.rowCount()):
@@ -303,3 +204,107 @@ class MaterialsTab(QWidget):
                 if col_id in self.column_checkboxes:
                     self.column_checkboxes[col_id].setChecked(is_visible)
                     self.toggle_column_visibility(col_id, is_visible)
+                    
+                    
+                
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        
+        # Controlli colonne
+        columns_layout = QHBoxLayout()
+        columns_label = QLabel("Colonne visibili:")
+        columns_layout.addWidget(columns_label)
+        
+        # Checkbox per ogni colonna aggiuntiva
+        self.column_checkboxes = {}
+        column_names = {
+            'num_modules': 'Numero Module',
+            'num_bornes': 'Bornes',
+            'bornes_mm': '1 Borne mm',
+            'tot_bornes_mm': 'Tot mm Bornes',
+            'prix_2s': 'Prix 2S',
+            'prix_3s': 'Prix 3S'
+        }
+        
+        for col_id, col_name in column_names.items():
+            cb = QCheckBox(col_name)
+            cb.setChecked(False)
+            cb.stateChanged.connect(
+                lambda state, c=col_id: self.toggle_column_visibility(c, state)
+            )
+            columns_layout.addWidget(cb)
+            self.column_checkboxes[col_id] = cb
+        
+        layout.addLayout(columns_layout)
+        
+        # Tabella materiali
+        self.table = QTableWidget()
+        self.setup_table()
+        layout.addWidget(self.table)
+    
+
+
+    def on_cell_changed(self, item):
+        row = item.row()
+        col = item.column()
+        
+        try:
+            if col == 1:  # Reference column
+                reference = item.text().strip()
+                if reference:
+                    product = self.db.get_product(reference, self.manufacturer)
+                    if product:
+                        # Blocca i segnali solo per l'aggiornamento dei dati
+                        self.table.blockSignals(True)
+                        
+                        # Aggiorna i campi
+                        self.table.setItem(row, 2, QTableWidgetItem(str(product['designation'])))
+                        self.table.setItem(row, 3, QTableWidgetItem(self.format_number(product['price'])))
+                        self.table.setItem(row, 4, QTableWidgetItem(str(product['time'])))
+                        
+                        # Aggiorna campi nascosti
+                        self.table.setItem(row, 7, QTableWidgetItem(str(product.get('num_modules', ''))))
+                        self.table.setItem(row, 8, QTableWidgetItem(str(product.get('num_bornes', ''))))
+                        self.table.setItem(row, 9, QTableWidgetItem(str(product.get('bornes_mm', ''))))
+                        self.table.setItem(row, 10, QTableWidgetItem(str(product.get('tot_bornes_mm', ''))))
+                        self.table.setItem(row, 11, QTableWidgetItem(self.format_number(product.get('prix_2s', 0))))
+                        self.table.setItem(row, 12, QTableWidgetItem(self.format_number(product.get('prix_3s', 0))))
+                        
+                        # Se c'è già una quantità, aggiorna i totali
+                        qty_item = self.table.item(row, 0)
+                        if qty_item and qty_item.text():
+                            try:
+                                qty = float(qty_item.text())
+                                self.table.setItem(row, 5, QTableWidgetItem(self.format_number(product['price'] * qty)))
+                                self.table.setItem(row, 6, QTableWidgetItem(str(int(product['time'] * qty))))
+                            except ValueError:
+                                pass
+                        
+                        self.table.blockSignals(False)
+            
+            elif col == 0:  # Quantity column
+                qty_text = item.text().strip()
+                price_item = self.table.item(row, 3)
+                time_item = self.table.item(row, 4)
+                
+                if qty_text and price_item and time_item:
+                    try:
+                        qty = float(qty_text)
+                        price = float(price_item.text().replace("'", ""))
+                        time = float(time_item.text())
+                        
+                        self.table.blockSignals(True)
+                        self.table.setItem(row, 5, QTableWidgetItem(self.format_number(price * qty)))
+                        self.table.setItem(row, 6, QTableWidgetItem(str(int(time * qty))))
+                        self.table.blockSignals(False)
+                    except ValueError:
+                        pass
+            
+            # Verifica se c'è contenuto nella tabella
+            has_content = self.check_content()
+            if has_content != self.has_content:
+                self.has_content = has_content
+                self.dataChanged.emit()
+            
+        except Exception as e:
+            logging.error(f"Errore nell'aggiornamento della riga: {str(e)}")

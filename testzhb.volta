@@ -1,0 +1,20 @@
+{
+    "name": "testzhb",
+    "client_name": "oidfjo",
+    "volta_number": "5614",
+    "creation_date": "2024-10-25",
+    "tableaux": {
+        "dfvdf": {
+            "name": "dfvdf",
+            "materials_data": {},
+            "labor_data": [],
+            "summary_data": {}
+        },
+        "GGG": {
+            "name": "GGG",
+            "materials_data": {},
+            "labor_data": [],
+            "summary_data": {}
+        }
+    }
+}

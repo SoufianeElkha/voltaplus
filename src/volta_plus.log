@@ -1,0 +1,2 @@
+2024-10-25 18:24:31,734 - root - ERROR - Errore critico nell'applicazione: 'MainWindow' object has no attribute 'project'
+2024-10-25 18:26:46,831 - root - ERROR - Errore nell'aggiornamento della riga: 'MaterialsTab' object has no attribute 'has_content'

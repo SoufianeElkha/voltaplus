@@ -1,16 +1,30 @@
+import logging
 from PyQt6.QtWidgets import QLineEdit, QComboBox, QStyledItemDelegate
 from PyQt6.QtCore import Qt
 
 class InlineEditDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
-        if index.column() == 1:  # Reference column
-            editor = ReferenceEditor(parent)
-            editor.setCompleter(self.parent().reference_completer)
-            return editor
-        elif index.column() == 0:  # Quantity column
-            editor = QuantityEditor(parent)
-            return editor
+        try:
+            if index.column() == 1:  # Reference column
+                editor = ReferenceEditor(parent)
+                if hasattr(self.parent(), 'reference_completer'):
+                    editor.setCompleter(self.parent().reference_completer)
+                return editor
+            elif index.column() == 0:  # Quantity column
+                editor = QuantityEditor(parent)
+                return editor
+        except Exception as e:
+            logging.error(f"Errore nella creazione dell'editor: {str(e)}")
         return super().createEditor(parent, option, index)
+
+    def setEditorData(self, editor, index):
+        value = index.model().data(index, Qt.ItemDataRole.EditRole)
+        if value is not None:
+            editor.setText(str(value))
+
+    def setModelData(self, editor, model, index):
+        value = editor.text()
+        model.setData(index, value, Qt.ItemDataRole.EditRole)
 
 class ReferenceEditor(QLineEdit):
     def __init__(self, parent=None):

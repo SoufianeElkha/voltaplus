@@ -1,4 +1,3 @@
-
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                            QLineEdit, QPushButton, QFormLayout, QMessageBox)
 from PyQt6.QtCore import Qt
@@ -35,7 +34,8 @@ class NewTableauDialog(QDialog):
         layout.addLayout(buttons_layout)
     
     def validate_and_accept(self):
-        if not self.tableau_name.text().strip():
+        name = self.tableau_name.text().strip()
+        if not name:
             QMessageBox.warning(self, "Errore", "Inserire il nome del quadro")
             return
         
