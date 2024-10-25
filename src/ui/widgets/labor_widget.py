@@ -2,7 +2,11 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                            QTableWidgetItem, QPushButton, QLabel, QHeaderView,
                            QFrame)
 from PyQt6.QtCore import Qt, pyqtSignal
-from src.config import LABOR_BASE_RATES, LABOR_COEFFICIENTS, LaborType
+
+from ...config import (LABOR_BASE_RATES, LABOR_COEFFICIENTS, LaborType, 
+                      COLORS)
+from .custom_editors import HoursDelegate
+from ...utils.error_handler import ErrorHandler
 
 class LaborWidget(QWidget):
     dataChanged = pyqtSignal()
@@ -57,6 +61,12 @@ class LaborWidget(QWidget):
         
         self.table.setHorizontalHeaderLabels(["Type", "Heures", "Tarif"])
         
+        # Riduci l'altezza delle righe
+        self.table.verticalHeader().setDefaultSectionSize(25)
+        
+        # Disabilita la griglia
+        self.table.setShowGrid(False)
+        
         # Popola la tabella
         for i, (labor_type, base_rate) in enumerate(LABOR_BASE_RATES.items()):
             # Tipo (non editabile)
@@ -80,8 +90,8 @@ class LaborWidget(QWidget):
         # Imposta le dimensioni delle colonne
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        self.table.setColumnWidth(1, 100)
-        self.table.setColumnWidth(2, 100)
+        self.table.setColumnWidth(1, 60)  # Ridotto la larghezza della colonna ore
+        self.table.setColumnWidth(2, 80)  # Ridotto la larghezza della colonna tariffa
         
         # Stile header
         header.setStyleSheet("""
@@ -92,6 +102,9 @@ class LaborWidget(QWidget):
                 border: 1px solid #388E3C;
             }
         """)
+        
+        # Imposta il delegate personalizzato per la colonna delle ore
+        self.table.setItemDelegateForColumn(1, HoursDelegate(self))
         
         # Connetti l'evento di modifica
         self.table.itemChanged.connect(self.on_data_changed)
@@ -140,7 +153,6 @@ class LaborWidget(QWidget):
                 """)
     
     def on_data_changed(self, item=None):
-        # Ricalcola il totale e emetti il segnale
         self.dataChanged.emit()
     
     def get_total_cost(self):
@@ -152,7 +164,7 @@ class LaborWidget(QWidget):
             if hours_item and rate_item and hours_item.text() and rate_item.text():
                 try:
                     hours = float(hours_item.text().replace(",", "."))
-                    rate = float(rate_item.text().replace(",", "."))
+                    rate = float(rate_item.text().replace("'", ""))
                     total_cost += hours * rate
                 except ValueError:
                     continue

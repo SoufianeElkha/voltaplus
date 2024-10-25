@@ -1,5 +1,5 @@
-from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QPushButton, 
-                           QFileDialog, QLabel)
+from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QPushButton, QLabel, 
+                           QFileDialog)
 from PyQt6.QtCore import Qt
 from .new_project import NewProjectDialog
 
@@ -30,10 +30,36 @@ class StartupDialog(QDialog):
         new_project_btn.setMinimumHeight(40)
         open_project_btn.setMinimumHeight(40)
         
+        # Stile bottoni
+        button_style = """
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QPushButton:pressed {
+                background-color: #388E3C;
+            }
+        """
+        new_project_btn.setStyleSheet(button_style)
+        open_project_btn.setStyleSheet(button_style)
+        
         layout.addWidget(new_project_btn)
+        layout.addSpacing(10)
         layout.addWidget(open_project_btn)
         
         self.setMinimumWidth(300)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #f5f5f5;
+            }
+        """)
 
     def create_new_project(self):
         dialog = NewProjectDialog(self)

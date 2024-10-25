@@ -1,3 +1,4 @@
+
 MAIN_STYLE = """
 QMainWindow {
     background-color: #f5f5f5;
@@ -7,10 +8,17 @@ QWidget {
     font-size: 12px;
 }
 
+QLabel[title="true"] {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    margin: 5px 0;
+}
+
 QTableWidget {
     background-color: white;
-    border: 1px solid #ccc;
-    gridline-color: #ddd;
+    border: 1px solid #ddd;
+    gridline-color: #eee;
 }
 
 QTableWidget::item {
@@ -31,7 +39,7 @@ QHeaderView::section {
 }
 
 QGroupBox {
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     border-radius: 4px;
     margin-top: 1em;
     padding-top: 1em;
@@ -42,6 +50,7 @@ QGroupBox::title {
     subcontrol-origin: margin;
     left: 10px;
     padding: 0 3px;
+    color: #333;
 }
 
 QPushButton {
@@ -100,14 +109,18 @@ QCheckBox::indicator:checked {
 
 QSpinBox, QDoubleSpinBox {
     padding: 5px;
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     border-radius: 4px;
     min-width: 80px;
 }
 
+QSpinBox:focus, QDoubleSpinBox:focus {
+    border-color: #4CAF50;
+}
+
 QLineEdit {
     padding: 8px;
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     border-radius: 4px;
 }
 
@@ -116,16 +129,16 @@ QLineEdit:focus {
 }
 
 QTabWidget::pane {
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     background: white;
     border-radius: 4px;
 }
 
 QTabBar::tab {
-    background: #e0e0e0;
+    background: #f0f0f0;
     color: #333;
     padding: 8px 12px;
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     border-bottom: none;
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
@@ -145,27 +158,24 @@ QTabBar::tab:hover:!selected {
     background: #eee;
 }
 
-QLabel[title="true"] {
-    font-size: 14px;
-    font-weight: bold;
-    color: #333;
-    margin: 5px 0;
+QScrollBar:vertical {
+    border: none;
+    background: #f5f5f5;
+    width: 10px;
+    margin: 0px;
 }
 
-/* Stili per la finestra di dialogo */
-QDialog {
-    background-color: #f5f5f5;
+QScrollBar::handle:vertical {
+    background: #888;
+    min-height: 20px;
+    border-radius: 5px;
 }
 
-QDialog QLabel {
-    color: #333;
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
 }
 
-QDialog QPushButton {
-    min-width: 100px;
-}
-
-/* Stili per i messaggi di errore */
 QMessageBox {
     background-color: #f5f5f5;
 }
@@ -173,26 +183,25 @@ QMessageBox {
 QMessageBox QPushButton {
     min-width: 100px;
 }
-
-/* Stili per il separatore */
-QFrame[frameShape="4"] {
-    color: #ddd;
-    margin: 10px 0;
-}
 """
 
-# Stile specifico per i tab con contenuto
-TAB_STYLE = {
-    'default': """
-        QTabBar::tab {
-            background-color: #4CAF50;
-            color: white;
-        }
-    """,
-    'with_content': """
-        QTabBar::tab {
-            background-color: #FF5722;
-            color: white;
-        }
-    """
+# Stili specifici per i tab con contenuto
+TAB_COLORS = {
+    'default': '#4CAF50',  # Verde
+    'with_content': '#FF5722'  # Arancione
 }
+
+# Stile per i dialoghi
+DIALOG_STYLE = """
+QDialog {
+    background-color: #f5f5f5;
+}
+
+QLabel {
+    color: #333;
+}
+
+QPushButton {
+    min-width: 100px;
+}
+"""

@@ -5,10 +5,6 @@ class LaborType(Enum):
     EXTERNAL = "Externe"
     BKW = "BKW"
 
-TAB_COLORS = {
-    'default': '#4CAF50',  # Verde
-    'with_content': '#FF5722'  # Arancione
-}
 # Tariffe base
 LABOR_BASE_RATES = {
     "Chef Projet": 64.00,
@@ -51,12 +47,6 @@ LABOR_COEFFICIENTS = {
     }
 }
 
-# Colori per i tab con contenuto
-TAB_COLORS = {
-    'default': '#4CAF50',
-    'with_content': '#FF5722'
-}
-
 # Struttura del sommario
 SUMMARY_SECTIONS = {
     'costs': [
@@ -79,8 +69,44 @@ SUMMARY_SECTIONS = {
     ]
 }
 
-# Configurazioni database
-DB_FILE = 'volta_plus.db'
+# Colori
+COLORS = {
+    'primary': '#4CAF50',
+    'primary_dark': '#388E3C',
+    'primary_light': '#C8E6C9',
+    'secondary': '#2196F3',
+    'secondary_dark': '#1976D2',
+    'warning': '#FF5722',
+    'background': '#f5f5f5',
+    'surface': '#FFFFFF',
+    'border': '#ddd',
+    'text': '#333333',
+    'text_light': '#FFFFFF'
+}
 
-# Manufacturers
+# Colori dei tab
+TAB_COLORS = {
+    'default': '#4CAF50',  # Verde
+    'with_content': '#FF5722'  # Arancione
+}
+
+# Configurazione applicazione
+APP_CONFIG = {
+    'database_file': 'volta_plus.db',
+    'log_file': 'volta_plus.log',
+    'autosave_interval': 300000,  # 5 minuti in millisecondi
+    'default_margin': 25.0,
+    'project_file_extension': '.volta'
+}
+
+# Lista dei produttori
 MANUFACTURERS = ['Schneider', 'Hager', 'KNX', 'MCR', 'Swisspro']
+
+# Configurazione UI
+UI_CONFIG = {
+    'window_width': 1600,
+    'window_height': 900,
+    'table_row_height': 25,
+    'min_button_width': 80,
+    'margin_decimals': 2
+}

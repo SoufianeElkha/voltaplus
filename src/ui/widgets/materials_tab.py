@@ -4,10 +4,11 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                            QAbstractItemView)
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor
-from src.config import TAB_COLORS
+
+from ...config import TAB_COLORS, COLORS, MANUFACTURERS
+from ...models import Database
 from .custom_editors import InlineEditDelegate
-import sqlite3
-import logging
+from ...utils.error_handler import ErrorHandler
 
 class MaterialsTab(QWidget):
     dataChanged = pyqtSignal(str, bool)  # Segnale per il manufacturer e lo stato del contenuto
