@@ -1,3 +1,4 @@
+
 from enum import Enum
 
 class LaborType(Enum):
@@ -69,6 +70,27 @@ SUMMARY_SECTIONS = {
     ]
 }
 
+# Configurazioni dell'applicazione
+APP_CONFIG = {
+    'database_file': 'volta_plus.db',
+    'log_file': 'volta_plus.log',
+    'autosave_interval': 300000,  # 5 minuti in millisecondi
+    'default_margin': 25.0,
+    'project_file_extension': '.volta'
+}
+
+# Lista dei produttori
+MANUFACTURERS = ['Schneider', 'Hager', 'KNX', 'MCR', 'Swisspro']
+
+# Configurazioni UI
+UI_CONFIG = {
+    'window_width': 1600,
+    'window_height': 900,
+    'table_row_height': 25,
+    'min_button_width': 80,
+    'margin_decimals': 2
+}
+
 # Colori
 COLORS = {
     'primary': '#4CAF50',
@@ -88,25 +110,4 @@ COLORS = {
 TAB_COLORS = {
     'default': '#4CAF50',  # Verde
     'with_content': '#FF5722'  # Arancione
-}
-
-# Configurazione applicazione
-APP_CONFIG = {
-    'database_file': 'volta_plus.db',
-    'log_file': 'volta_plus.log',
-    'autosave_interval': 300000,  # 5 minuti in millisecondi
-    'default_margin': 25.0,
-    'project_file_extension': '.volta'
-}
-
-# Lista dei produttori
-MANUFACTURERS = ['Schneider', 'Hager', 'KNX', 'MCR', 'Swisspro']
-
-# Configurazione UI
-UI_CONFIG = {
-    'window_width': 1600,
-    'window_height': 900,
-    'table_row_height': 25,
-    'min_button_width': 80,
-    'margin_decimals': 2
 }
